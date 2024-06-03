@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <compare>
 #include <cstddef>
 #include <cstdint>
@@ -19,6 +20,12 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+
+#if defined(SPARROW_USE_DATE_POLYFILL)
+#include <date/tz.h>
+#else
+namespace date = std::chrono; 
+#endif
 
 #include "sparrow/typed_array.hpp"
 #include "sparrow/data_type.hpp"
@@ -30,20 +37,18 @@ using namespace sparrow;
 
 namespace
 {
-    constexpr size_t n = 10;
-    constexpr size_t offset = 1;
+    constexpr std::size_t n = 10;
+    constexpr std::size_t offset = 1;
     const std::vector<size_t> false_bitmap = {9};
     using sys_time = std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds>;
-
-    using namespace date::literals;
 }
 
 TEST_SUITE("typed_array_timestamp")
 {
     TEST_CASE("constructor with parameter")
     {
-        constexpr size_t n = 10;
-        constexpr size_t offset = 1;
+        constexpr std::size_t n = 10;
+        constexpr std::size_t offset = 1;
         const auto array_data = sparrow::test::make_test_array_data<sparrow::timestamp>(n, offset);
         const typed_array<sparrow::timestamp> ta{array_data};
         CHECK_EQ(ta.size(), n - offset);
@@ -57,7 +62,7 @@ TEST_SUITE("typed_array_timestamp")
         typed_array<sparrow::timestamp> ta{array_data};
         for (typename typed_array<sparrow::timestamp>::size_type i = 0; i < ta.size() - 1; ++i)
         {
-            CHECK_EQ(ta.at(i).value(), sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(i + 1)));
+            CHECK_EQ(ta.at(i).value(), sparrow::timestamp(date::sys_days(date:year(1970)/date::January/date::day(1)) + date::days(i + 1)));
         }
         CHECK_FALSE(ta.at(false_bitmap[0] - offset).has_value());
 
@@ -70,7 +75,7 @@ TEST_SUITE("typed_array_timestamp")
         const typed_array<sparrow::timestamp> ta{array_data};
         for (typename typed_array<sparrow::timestamp>::size_type i = 0; i < ta.size() - 1; ++i)
         {
-            CHECK_EQ(ta.at(i).value(), sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(i + 1)));
+            CHECK_EQ(ta.at(i).value(), sparrow::timestamp(date::sys_days(date:year(1970)/date::January/date::day(1)) + date::days(i + 1)));
         }
         CHECK_FALSE(ta.at(false_bitmap[0] - offset).has_value());
 
@@ -83,7 +88,7 @@ TEST_SUITE("typed_array_timestamp")
         typed_array<sparrow::timestamp> ta{array_data};
         for (typename typed_array<sparrow::timestamp>::size_type i = 0; i < ta.size() - 1; ++i)
         {
-            CHECK_EQ(ta[i].value(), sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(i + 1)));
+            CHECK_EQ(ta[i].value(), sparrow::timestamp(date::sys_days(date::year(1970)/date::January/date::day(1)) + date::days(i + 1)));
         }
         CHECK_FALSE(ta[ta.size() - 1].has_value());
     }
@@ -94,7 +99,7 @@ TEST_SUITE("typed_array_timestamp")
         const typed_array<sparrow::timestamp> ta{array_data};
         for (typename typed_array<sparrow::timestamp>::size_type i = 0; i < ta.size() - 1; ++i)
         {
-            CHECK_EQ(ta[i].value(), sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(i + 1)));
+            CHECK_EQ(ta[i].value(), sparrow::timestamp(date::sys_days(date::year(1970)/date::January/date::day(1)) + date::days(i + 1)));
         }
         CHECK_FALSE(ta[false_bitmap[0] - offset].has_value());
     }
@@ -103,14 +108,14 @@ TEST_SUITE("typed_array_timestamp")
     {
         const auto array_data = sparrow::test::make_test_array_data<sparrow::timestamp>(n, offset, false_bitmap);
         typed_array<sparrow::timestamp> ta{array_data};
-        CHECK_EQ(ta.front().value(), sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(1)));
+        CHECK_EQ(ta.front().value(), sparrow::timestamp(date::sys_days(date::year(1970)/date::January/date::day(1)) + date::days(1)));
     }
 
     TEST_CASE("const front")
     {
         const auto array_data = sparrow::test::make_test_array_data<sparrow::timestamp>(n, offset, false_bitmap);
         const typed_array<sparrow::timestamp> ta{array_data};
-        CHECK_EQ(ta.front().value(), sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(1)));
+        CHECK_EQ(ta.front().value(), sparrow::timestamp(date::sys_days(date::year(1970)/date::January/date::day(1)) + date::days(1)));
     }
 
     TEST_CASE("back")
@@ -165,9 +170,9 @@ TEST_SUITE("typed_array_timestamp")
         const typed_array<sparrow::timestamp> ta{array_data};
         const auto bitmap = ta.bitmap();
         REQUIRE_EQ(bitmap.size(), n - offset);
-        for (size_t i = 0; i < bitmap.size() - 1; ++i)
+        for (std::size_t i = 0; i < bitmap.size() - 1; ++i)
         {
-            CHECK(bitmap[i]);
+            CHECK(bitmap[static_cast<std::ptrdiff_t>(i)]);
         }
         CHECK_FALSE(bitmap[8]);
     }
@@ -180,7 +185,7 @@ TEST_SUITE("typed_array_timestamp")
         CHECK_EQ(values.size(), n - offset);
         for (typename typed_array<sparrow::timestamp>::size_type i = 0; i < values.size(); ++i)
         {
-            CHECK_EQ(values[i], sparrow::timestamp(date::sys_days(1970_y/date::January/1_d) + date::days(i + 1)));
+            CHECK_EQ(values[static_cast<std::ptrdiff_t>(i)], sparrow::timestamp(date::sys_days(date::year(1970)/date::January/date::day(1)) + date::days(i + 1)));
         }
     }
 

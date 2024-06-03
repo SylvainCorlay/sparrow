@@ -55,7 +55,12 @@ jobs:
           ninja
 
     - name: Configure using CMake
+      if: matrix.build-system != 'Ninja'
       run: cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=${{matrix.config.name}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON -G "${{matrix.build-system}}"
+
+    - name: Configure using CMake
+      if: matrix.build-system == 'Ninja'
+      run: cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=${{matrix.config.name}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTS=ON -DUSE_DATE_POLYFILL=OFF -G "${{matrix.build-system}}"
 
     - name: Install
       working-directory: build
